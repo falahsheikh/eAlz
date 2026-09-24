@@ -19,7 +19,9 @@ def test_names_count_and_size(tmp_path):
     for i, name in enumerate(["cn", "emci", "lmci"]):
         write_volume(tmp_path / "in" / name / f"ADNI_002_S_000{i}_stripped.nii.gz", seed=i)
 
-    extract_slices.main(["--input-dir", str(tmp_path / "in"), "--output-dir", str(tmp_path / "out"), "--per-class-cap", "25"])
+    extract_slices.main(
+        ["--input-dir", str(tmp_path / "in"), "--output-dir", str(tmp_path / "out"), "--per-class-cap", "25"]
+    )
 
     files = sorted(p.name for p in (tmp_path / "out" / "cn").iterdir())
     # The middle coronal index is 40, so the 30-slice window is 25-54; the cap keeps the first 25.

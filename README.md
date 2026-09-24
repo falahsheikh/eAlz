@@ -38,7 +38,7 @@ With 5-fold stratified cross-validation, EfficientNetV2B0 (augmented) has a mean
 eAlz/
 ├── ealz/                      Python package
 │   ├── config.py              hyperparameters from the paper
-│   ├── data.py                split files and data generators
+│   ├── data.py                split files, cross-validation folds and data generators
 │   ├── models.py              backbones and classification head
 │   ├── training.py            training with early stopping, and inference
 │   ├── metrics.py             accuracy, AUC, Brier score, sensitivity, specificity, PPV, NPV
@@ -74,6 +74,8 @@ eAlz/
    pytest
    ```
 
+GitHub Actions runs `ruff check`, `ruff format --check` and `pytest` for each push.
+
 ## Data
 
 The data comes from the [Alzheimer's Disease Neuroimaging Initiative (ADNI)](https://adni.loni.usc.edu).
@@ -104,6 +106,8 @@ It crops each slice to the brain and puts it on a 224x224 canvas with zero paddi
 It keeps the aspect ratio.
 The default limit of 1,000 slices for each class gives the 3,000 slices in the paper.
 
+The training scripts stop with an error if an image in the split files is missing.
+
 ## Usage
 
 Train and evaluate one configuration on the fixed split:
@@ -114,8 +118,10 @@ python train.py --backbone efficientnetv2b0 --augment --data-root data/slices --
 
 - Use `--backbone mobilenetv2` or `--backbone densenet121` for the other backbones.
 - Do not use `--augment` if you want to train on the original data.
-- The output folder contains `model.keras`, `metrics.json`, `history.json` and `predictions.csv`.
+- The output folder contains `model.keras`, `metrics.json`, `history.json`, `predictions.csv` and `run_config.json`.
 - `metrics.json` contains all the metrics in Tables 8 to 10 of the paper.
+  It also gives the epoch with the lowest validation loss and the number of epochs trained.
+- `run_config.json` records the arguments and the library versions of the run.
 
 Run 5-fold stratified cross-validation on all 3,000 slices:
 
@@ -130,9 +136,10 @@ It uses the validation slices only for early stopping.
 Make Grad-CAM++ and Guided Grad-CAM++ maps for one or more slices:
 
 ```bash
-python explain.py --model runs/efficientnetv2b0_aug/model.keras --backbone efficientnetv2b0 \
-    --images data/slices/cn/<slice>.png --out runs/xai
+python explain.py --model runs/efficientnetv2b0_aug/model.keras --images data/slices/cn/<slice>.png --out runs/xai
 ```
+
+The script reads the backbone from the model, so the input scaling always agrees with training.
 
 ## Training configuration
 
@@ -174,6 +181,10 @@ python explain.py --model runs/efficientnetv2b0_aug/model.keras --backbone effic
   doi     = {10.3390/diagnostics15212709}
 }
 ```
+
+## License
+
+[CC BY-NC 4.0](LICENSE)
 
 ## Acknowledgments
 

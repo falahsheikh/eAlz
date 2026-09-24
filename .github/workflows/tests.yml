@@ -13,7 +13,9 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt ruff==0.16.9
+      - run: ruff check .
+      - run: ruff format --check .
       - run: pytest -q
         env:
           TF_CPP_MIN_LOG_LEVEL: "3"

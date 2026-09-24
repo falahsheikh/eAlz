@@ -10,7 +10,7 @@ from ealz.config import CLASSES, MAX_EPOCHS
 from ealz.data import read_splits
 from ealz.metrics import evaluate
 from ealz.models import BACKBONES
-from ealz.training import fit, predict, set_seed
+from ealz.training import environment, fit, predict, set_seed
 
 
 def parse_args(argv=None):
@@ -30,9 +30,11 @@ def main(argv=None):
     args = parse_args(argv)
     set_seed(args.seed)
     os.makedirs(args.out, exist_ok=True)
+    with open(os.path.join(args.out, "run_config.json"), "w") as f:
+        json.dump({"args": vars(args), "environment": environment()}, f, indent=2)
 
     train_df, val_df, test_df = read_splits(args.splits, args.data_root)
-    model, history = fit(
+    model, history, best_epoch = fit(
         args.backbone,
         train_df,
         val_df,
@@ -44,7 +46,7 @@ def main(argv=None):
 
     filepaths, y_true, probs = predict(model, args.backbone, test_df)
     metrics = evaluate(y_true, probs, CLASSES, seed=args.seed)
-    metrics["epochs_trained"] = len(history["loss"])
+    metrics.update(epochs_trained=len(history["loss"]), best_epoch=best_epoch)
 
     model.save(os.path.join(args.out, "model.keras"))
     with open(os.path.join(args.out, "metrics.json"), "w") as f:
@@ -59,7 +61,7 @@ def main(argv=None):
     print(
         f"{args.backbone} ({'augmented' if args.augment else 'original'}): "
         f"accuracy {metrics['accuracy']:.4f}, macro AUC {metrics['macro_auc']:.3f}, "
-        f"Brier {metrics['brier']:.4f}, epochs {metrics['epochs_trained']}"
+        f"Brier {metrics['brier']:.4f}, best epoch {best_epoch} of {metrics['epochs_trained']}"
     )
     return metrics
 

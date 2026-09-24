@@ -15,7 +15,7 @@ _RECTIFIERS = {"relu", "relu6", "silu", "swish"}
 def feature_layer_name(model):
     """Name of the layer whose output feeds the classifier's global average pooling (the final feature map)."""
     # Search from the end: EfficientNet's squeeze-and-excitation blocks contain their own pooling layers.
-    pooling = next((l for l in reversed(model.layers) if isinstance(l, keras.layers.GlobalAveragePooling2D)), None)
+    pooling = next((x for x in reversed(model.layers) if isinstance(x, keras.layers.GlobalAveragePooling2D)), None)
     if pooling is None:
         raise ValueError("expected a GlobalAveragePooling2D layer after the backbone")
     for layer in model.layers:
@@ -86,9 +86,12 @@ def _guided(fn):
 
 def _clone_layer(layer):
     if isinstance(layer, keras.layers.ReLU):  # e.g. MobileNetV2's ReLU6 layers, which have no `activation` attribute
-        relu = lambda x, l=layer: keras.activations.relu(
-            x, negative_slope=l.negative_slope, max_value=l.max_value, threshold=l.threshold
-        )
+
+        def relu(x, config=layer):
+            return keras.activations.relu(
+                x, negative_slope=config.negative_slope, max_value=config.max_value, threshold=config.threshold
+            )
+
         return keras.layers.Activation(_guided(relu), name=layer.name)
     return layer.__class__.from_config(layer.get_config())
 

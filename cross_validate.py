@@ -11,14 +11,13 @@ import os
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold, train_test_split
 from tensorflow import keras
 
 from ealz.config import CLASSES, MAX_EPOCHS
-from ealz.data import read_splits
+from ealz.data import make_folds, read_splits
 from ealz.metrics import evaluate
 from ealz.models import BACKBONES
-from ealz.training import fit, predict, set_seed
+from ealz.training import environment, fit, predict, set_seed
 
 SUMMARY_METRICS = ("accuracy", "balanced_accuracy", "macro_auc", "micro_auc", "brier")
 
@@ -42,14 +41,10 @@ def main(argv=None):
     os.makedirs(args.out, exist_ok=True)
     slices = pd.concat(read_splits(args.splits, args.data_root), ignore_index=True)
 
-    folds = StratifiedKFold(n_splits=args.folds, shuffle=True, random_state=args.seed)
     results = []
-    for fold, (train_val_idx, test_idx) in enumerate(folds.split(slices, slices["label"]), start=1):
-        train_val, test = slices.iloc[train_val_idx], slices.iloc[test_idx]
-        train, val = train_test_split(train_val, test_size=0.2, stratify=train_val["label"], random_state=args.seed)
-
+    for fold, train, val, test in make_folds(slices, n_folds=args.folds, seed=args.seed):
         set_seed(args.seed + fold)
-        model, history = fit(
+        model, history, best_epoch = fit(
             args.backbone,
             train,
             val,
@@ -60,7 +55,9 @@ def main(argv=None):
         )
         _, y_true, probs = predict(model, args.backbone, test)
         metrics = evaluate(y_true, probs, CLASSES, seed=args.seed)
-        metrics.update(fold=fold, epochs_trained=len(history["loss"]), n_train=len(train), n_val=len(val))
+        metrics.update(
+            fold=fold, epochs_trained=len(history["loss"]), best_epoch=best_epoch, n_train=len(train), n_val=len(val)
+        )
         results.append(metrics)
         print(f"fold {fold}/{args.folds}: accuracy {metrics['accuracy']:.4f}, macro AUC {metrics['macro_auc']:.3f}")
         keras.backend.clear_session()
@@ -70,7 +67,7 @@ def main(argv=None):
         for m in SUMMARY_METRICS
     }
     with open(os.path.join(args.out, "cv_results.json"), "w") as f:
-        json.dump({"summary": summary, "folds": results}, f, indent=2)
+        json.dump({"args": vars(args), "environment": environment(), "summary": summary, "folds": results}, f, indent=2)
 
     acc = summary["accuracy"]
     print(f"{args.folds}-fold accuracy: {acc['mean']:.4f} +/- {acc['std']:.4f} (sample standard deviation)")

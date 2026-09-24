@@ -5,6 +5,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytest
 
 import cross_validate
 import explain
@@ -32,12 +33,15 @@ def make_dataset(root, per_class=12):
 
 def test_train_cross_validate_explain(tmp_path):
     make_dataset(tmp_path)
-    common = ["--backbone", "mobilenetv2", "--data-root", str(tmp_path / "slices"), "--splits", str(tmp_path / "splits")]
-    common += ["--epochs", "1", "--no-pretrained"]
+    common = ["--backbone", "mobilenetv2", "--data-root", str(tmp_path / "slices")]
+    common += ["--splits", str(tmp_path / "splits"), "--epochs", "1", "--no-pretrained"]
 
     metrics = train.main(common + ["--augment", "--out", str(tmp_path / "run")])
     assert metrics["n"] == 9 and 0.0 <= metrics["accuracy"] <= 1.0
-    assert json.loads((tmp_path / "run" / "metrics.json").read_text())["epochs_trained"] == 1
+    saved = json.loads((tmp_path / "run" / "metrics.json").read_text())
+    assert saved["epochs_trained"] == 1 and saved["best_epoch"] == 1
+    config = json.loads((tmp_path / "run" / "run_config.json").read_text())
+    assert config["args"]["backbone"] == "mobilenetv2" and "tensorflow" in config["environment"]
     predictions = pd.read_csv(tmp_path / "run" / "predictions.csv")
     assert len(predictions) == 9
     np.testing.assert_allclose(predictions[[f"prob_{c}" for c in CLASSES]].sum(axis=1), 1.0, rtol=1e-5)
@@ -47,7 +51,9 @@ def test_train_cross_validate_explain(tmp_path):
     assert [f["n"] for f in folds] == [18, 18] and set(summary) >= {"accuracy", "macro_auc", "brier"}
 
     image = tmp_path / "slices" / "cn" / "cn_synthetic_00_s100.png"
-    explain.main(["--model", str(tmp_path / "run" / "model.keras"), "--backbone", "mobilenetv2"]
-                 + ["--images", str(image), "--out", str(tmp_path / "xai")])
+    model = str(tmp_path / "run" / "model.keras")
+    explain.main(["--model", model, "--images", str(image), "--out", str(tmp_path / "xai")])  # backbone read from model
+    with pytest.raises(ValueError, match="does not match"):
+        explain.main(["--model", model, "--backbone", "densenet121", "--images", str(image), "--out", str(tmp_path)])
     for suffix in ("gradcampp", "guided_gradcampp"):
         assert (tmp_path / "xai" / f"cn_synthetic_00_s100_{suffix}.png").exists()

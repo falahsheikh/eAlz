@@ -5,6 +5,7 @@ authors:
   - family-names: Sheikh
     given-names: Falah
 repository-code: "https://github.com/falahsheikh/eAlz"
+license: CC-BY-NC-4.0
 preferred-citation:
   type: article
   title: "Lightweight Deep Learning Models with Explainable AI for Early Alzheimer's Detection from Standard MRI Scans"

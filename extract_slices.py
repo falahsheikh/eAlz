@@ -76,7 +76,8 @@ def extract_class(input_dir, output_dir, class_name, num_slices=30, per_class_ca
     """Write slices for one class and return (number of PNG files, number of volumes used)."""
     out = Path(output_dir) / class_name
     out.mkdir(parents=True, exist_ok=True)
-    volumes = sorted([*(Path(input_dir) / class_name).rglob("*.nii.gz"), *(Path(input_dir) / class_name).rglob("*.nii")])
+    class_dir = Path(input_dir) / class_name
+    volumes = sorted([*class_dir.rglob("*.nii.gz"), *class_dir.rglob("*.nii")])
     saved, used = 0, set()
     for path in volumes:
         if saved >= per_class_cap:
@@ -100,13 +101,15 @@ def extract_class(input_dir, output_dir, class_name, num_slices=30, per_class_ca
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--input-dir", required=True, help="folder with cn/, emci/ and lmci/ subfolders of skull-stripped volumes")
+    p.add_argument("--input-dir", required=True, help="folder with cn/, emci/ and lmci/ subfolders of volumes")
     p.add_argument("--output-dir", required=True, help="folder for the PNG slices")
     p.add_argument("--num-slices", type=int, default=30, help="coronal slices per volume")
     p.add_argument("--per-class-cap", type=int, default=1000, help="maximum number of slices per class")
     args = p.parse_args(argv)
     for class_name in CLASSES:
-        saved, n_volumes = extract_class(args.input_dir, args.output_dir, class_name, args.num_slices, args.per_class_cap)
+        saved, n_volumes = extract_class(
+            args.input_dir, args.output_dir, class_name, args.num_slices, args.per_class_cap
+        )
         print(f"{class_name}: {saved} slices from {n_volumes} volumes")
 
 
