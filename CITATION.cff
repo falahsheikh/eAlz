@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper below."
+title: "eAlz: lightweight explainable models for early Alzheimer's detection"
+authors:
+  - family-names: Sheikh
+    given-names: Falah
+repository-code: "https://github.com/falahsheikh/eAlz"
+preferred-citation:
+  type: article
+  title: "Lightweight Deep Learning Models with Explainable AI for Early Alzheimer's Detection from Standard MRI Scans"
+  authors:
+    - family-names: Sheikh
+      given-names: Falah
+    - family-names: Al Marouf
+      given-names: Ahmed
+    - family-names: Rokne
+      given-names: Jon George
+    - family-names: Alhajj
+      given-names: Reda
+  journal: Diagnostics
+  volume: 15
+  issue: 21
+  start: 2709
+  year: 2025
+  doi: 10.3390/diagnostics15212709
