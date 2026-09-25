@@ -3,6 +3,7 @@ import nibabel as nib
 import numpy as np
 
 import extract_slices
+from ealz.preprocessing import volume_name
 
 
 def write_volume(path, seed):
@@ -27,5 +28,5 @@ def test_names_count_and_size(tmp_path):
     # The middle coronal index is 40, so the 30-slice window is 25-54; the cap keeps the first 25.
     assert files == [f"cn_ADNI_002_S_0000_s{i:03d}.png" for i in range(25, 50)]
     assert plt.imread(tmp_path / "out" / "cn" / files[0]).shape[:2] == (224, 224)
-    assert extract_slices.volume_name("stripped.nii.gz") == "stripped"
-    assert extract_slices.volume_name("ADNI_1_S_2_x_stripped.nii") == "ADNI_1_S_2_x"
+    assert volume_name("stripped.nii.gz") == "stripped"
+    assert volume_name("ADNI_1_S_2_x_stripped.nii") == "ADNI_1_S_2_x"

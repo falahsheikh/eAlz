@@ -43,7 +43,7 @@ def test_logits_are_the_pre_softmax_scores():
     model = small_cnn()
     image = np.random.default_rng(2).normal(size=(1, 8, 8, 3)).astype("float32")
     feature_model, head = xai._logit_model(model)
-    logits = xai._logits(feature_model(image), head)
+    logits = xai._logits(feature_model([image]), head)
     np.testing.assert_allclose(tf.nn.softmax(logits).numpy(), model(image).numpy(), rtol=1e-5, atol=1e-6)
 
 

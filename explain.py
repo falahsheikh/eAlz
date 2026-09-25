@@ -2,27 +2,14 @@
 
 import argparse
 import os
-import warnings
 
-import matplotlib
+import numpy as np
+from matplotlib import image as mpimg
+from tensorflow import keras
 
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-from tensorflow import keras  # noqa: E402
-
-from ealz.config import CLASSES, IMG_SIZE  # noqa: E402
-from ealz.models import BACKBONES, infer_backbone, preprocess_fn  # noqa: E402
-from ealz.xai import (  # noqa: E402
-    feature_layer_name,
-    gradcam_plus_plus,
-    guided_gradcam_plus_plus,
-    guided_model,
-    overlay,
-)
-
-# Models saved by Keras record their input as a list; calling them with a single tensor is correct.
-warnings.filterwarnings("ignore", message="The structure of `inputs` doesn't match")
+from ealz.config import CLASSES, IMG_SIZE
+from ealz.models import BACKBONES, infer_backbone, preprocess_fn
+from ealz.xai import feature_layer_name, gradcam_plus_plus, guided_gradcam_plus_plus, guided_model, overlay
 
 
 def parse_args(argv=None):
@@ -54,21 +41,21 @@ def main(argv=None):
     os.makedirs(args.out, exist_ok=True)
     model = keras.models.load_model(args.model)
     backbone = resolve_backbone(model, args.backbone)
-    guided = guided_model(model)
+    guided = guided_model(model)  # built once and used for all images
     layer = args.layer or feature_layer_name(model)
 
     for path in args.images:
         rgb = keras.utils.img_to_array(keras.utils.load_img(path, color_mode="rgb", target_size=IMG_SIZE))
         batch = preprocess_fn(backbone)(rgb[np.newaxis].copy())
-        probs = model(batch, training=False).numpy()[0]
+        probs = model.predict(batch, verbose=0)[0]
         target = int(np.argmax(probs)) if args.class_index is None else args.class_index
 
         cam = gradcam_plus_plus(model, batch, target, layer)
         guided_cam = guided_gradcam_plus_plus(model, batch, target, layer, guided)
 
         stem = os.path.join(args.out, os.path.splitext(os.path.basename(path))[0])
-        plt.imsave(f"{stem}_gradcampp.png", overlay(cam, rgb))
-        plt.imsave(f"{stem}_guided_gradcampp.png", guided_cam, cmap="gray")
+        mpimg.imsave(f"{stem}_gradcampp.png", overlay(cam, rgb))
+        mpimg.imsave(f"{stem}_guided_gradcampp.png", guided_cam, cmap="gray")
         scores = ", ".join(f"{c} {p:.3f}" for c, p in zip(CLASSES, probs, strict=True))
         print(f"{path}: explained class {CLASSES[target]} (layer {layer}); probabilities: {scores}")
 

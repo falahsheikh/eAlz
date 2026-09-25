@@ -45,7 +45,11 @@ def make_folds(slices: pd.DataFrame, n_folds: int = 5, seed: int = 0, val_fracti
 
 
 def make_generator(df, preprocess, augment=False, shuffle=False, seed=None, batch_size=BATCH_SIZE):
-    """Stream images from df. Augmentation is only ever applied to training data."""
+    """Stream images from df. Augmentation is only ever applied to training data.
+
+    Keras 3 keeps ImageDataGenerator as a legacy API. It is used here because it applies the same
+    augmentation as the notebook of the paper.
+    """
     datagen = keras.preprocessing.image.ImageDataGenerator(
         preprocessing_function=preprocess, **(AUGMENTATION if augment else {})
     )

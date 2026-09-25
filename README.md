@@ -38,12 +38,13 @@ With 5-fold stratified cross-validation, EfficientNetV2B0 (augmented) has a mean
 eAlz/
 ├── ealz/                      Python package
 │   ├── config.py              hyperparameters from the paper
+│   ├── preprocessing.py       brain cropping and coronal slice extraction
 │   ├── data.py                split files, cross-validation folds and data generators
 │   ├── models.py              backbones and classification head
 │   ├── training.py            training with early stopping, and inference
 │   ├── metrics.py             accuracy, AUC, Brier score, sensitivity, specificity, PPV, NPV
 │   └── xai.py                 Grad-CAM++, guided backpropagation, Guided Grad-CAM++
-├── extract_slices.py          MRI volumes -> 224x224 PNG slices
+├── extract_slices.py          MRI volumes -> 224x224 PNG slices (command line)
 ├── train.py                   training and test evaluation on the fixed split
 ├── cross_validate.py          stratified k-fold cross-validation
 ├── explain.py                 explanation maps for single slices

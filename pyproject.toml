@@ -13,8 +13,5 @@ known-first-party = ["ealz", "train", "cross_validate", "explain", "extract_slic
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-filterwarnings = [
-    "ignore::DeprecationWarning",
-    'ignore:.*deprecated since version 0\.26:FutureWarning',
-    "ignore:The structure of `inputs` doesn't match",
-]
+# TensorFlow and Keras give DeprecationWarnings about their own internals.
+filterwarnings = ["ignore::DeprecationWarning"]

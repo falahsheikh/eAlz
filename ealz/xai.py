@@ -25,12 +25,16 @@ def feature_layer_name(model):
 
 
 def _logit_model(model, layer_name=None):
-    """Model returning (feature map, head input); the logits are computed from the head input."""
+    """Model returning the head input, or (feature map, head input); the logits are computed from the head input.
+
+    The model takes its input as a list (model.inputs), like models that Keras loads from a file.
+    Call it with [image].
+    """
     head = model.layers[-1]
     if not isinstance(head, keras.layers.Dense):
         raise ValueError("expected the model to end in a Dense layer")
     outputs = head.input if layer_name is None else [model.get_layer(layer_name).output, head.input]
-    return keras.Model(model.input, outputs), head
+    return keras.Model(model.inputs, outputs), head
 
 
 def _logits(features, head):
@@ -51,7 +55,7 @@ def gradcam_plus_plus(model, image, class_index, layer_name=None):
     image = tf.convert_to_tensor(image, dtype=tf.float32)
 
     with tf.GradientTape() as tape:
-        activations, features = grad_model(image, training=False)
+        activations, features = grad_model([image], training=False)
         score = _logits(features, head)[:, class_index]
     grads = tape.gradient(score, activations)[0]
     activations = activations[0]
@@ -116,7 +120,7 @@ def guided_backprop(model, image, class_index, guided=None):
     image = tf.convert_to_tensor(image, dtype=tf.float32)
     with tf.GradientTape() as tape:
         tape.watch(image)
-        score = _logits(feature_model(image, training=False), head)[:, class_index]
+        score = _logits(feature_model([image], training=False), head)[:, class_index]
     return tape.gradient(score, image)[0].numpy()
 
 
